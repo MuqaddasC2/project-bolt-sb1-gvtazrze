@@ -20,9 +20,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({ stats, currentDay }) 
   };
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-      <h2 className="text-lg font-medium mb-4 text-gray-800 dark:text-white">Statistics: Day {currentDay}</h2>
-      
+    <div className="bg-white dark:bg-gray-800 p-4">
       {/* Summary tiles */}
       <div className="grid grid-cols-4 gap-4 mb-4">
         <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
@@ -47,7 +45,12 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({ stats, currentDay }) 
       </div>
       
       {/* Additional statistics */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+          <h3 className="text-sm text-gray-600 dark:text-gray-300">Current Day</h3>
+          <p className="text-xl font-semibold text-gray-800 dark:text-white">{currentDay}</p>
+        </div>
+
         <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
           <h3 className="text-sm text-gray-600 dark:text-gray-300">New Cases</h3>
           <p className="text-xl font-semibold text-gray-800 dark:text-white">{currentStats.newCases}</p>

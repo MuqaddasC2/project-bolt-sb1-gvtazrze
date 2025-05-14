@@ -24,9 +24,7 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
   speed
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-      <h2 className="text-lg font-medium mb-4 text-gray-800 dark:text-white">Simulation Controls</h2>
-      
+    <div className="bg-white dark:bg-gray-800 p-4">
       {/* Playback controls */}
       <div className="flex space-x-2 mb-4">
         <button

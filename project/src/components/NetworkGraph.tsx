@@ -12,14 +12,14 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ network, width, height }) =
   const svgRef = useRef<SVGSVGElement>(null);
   const { people, links } = network;
 
-  // Color mapping for infection states
+  // Color mapping for infection states with gradients
   const getNodeColor = (status: InfectionStatus) => {
     switch (status) {
-      case InfectionStatus.SUSCEPTIBLE: return '#4ade80'; // Green
-      case InfectionStatus.EXPOSED: return '#facc15'; // Yellow
-      case InfectionStatus.INFECTIOUS: return '#ef4444'; // Red
-      case InfectionStatus.RECOVERED: return '#3b82f6'; // Blue
-      default: return '#9ca3af'; // Gray
+      case InfectionStatus.SUSCEPTIBLE: return 'url(#gradientGreen)';
+      case InfectionStatus.EXPOSED: return 'url(#gradientYellow)';
+      case InfectionStatus.INFECTIOUS: return 'url(#gradientRed)';
+      case InfectionStatus.RECOVERED: return 'url(#gradientBlue)';
+      default: return 'url(#gradientGray)';
     }
   };
 
@@ -34,35 +34,110 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ network, width, height }) =
       .attr('height', height)
       .attr('viewBox', [0, 0, width, height])
       .attr('style', 'max-width: 100%; height: auto;');
+
+    // Define gradients
+    const defs = svg.append('defs');
+
+    // Green gradient for susceptible
+    const gradientGreen = defs.append('radialGradient')
+      .attr('id', 'gradientGreen')
+      .attr('gradientUnits', 'objectBoundingBox');
+    gradientGreen.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#86efac');
+    gradientGreen.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#22c55e');
+
+    // Yellow gradient for exposed
+    const gradientYellow = defs.append('radialGradient')
+      .attr('id', 'gradientYellow')
+      .attr('gradientUnits', 'objectBoundingBox');
+    gradientYellow.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#fde047');
+    gradientYellow.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#eab308');
+
+    // Red gradient for infectious
+    const gradientRed = defs.append('radialGradient')
+      .attr('id', 'gradientRed')
+      .attr('gradientUnits', 'objectBoundingBox');
+    gradientRed.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#fca5a5');
+    gradientRed.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#dc2626');
+
+    // Blue gradient for recovered
+    const gradientBlue = defs.append('radialGradient')
+      .attr('id', 'gradientBlue')
+      .attr('gradientUnits', 'objectBoundingBox');
+    gradientBlue.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#93c5fd');
+    gradientBlue.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#2563eb');
+
+    // Gray gradient for default
+    const gradientGray = defs.append('radialGradient')
+      .attr('id', 'gradientGray')
+      .attr('gradientUnits', 'objectBoundingBox');
+    gradientGray.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#e5e7eb');
+    gradientGray.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#6b7280');
+
+    // Create zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.5, 4])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+
+    svg.call(zoom as any);
+
+    // Create a group for the graph
+    const g = svg.append('g');
     
-    // Create the force simulation
+    // Create the force simulation with adjusted parameters
     const simulation = d3.forceSimulation(people as d3.SimulationNodeDatum[])
       .force('link', d3.forceLink(links)
         .id((d: any) => d.id)
-        .distance(d => 50 * (1 - (d as any).strength))
+        .distance(50)
+        .strength(0.5)
       )
-      .force('charge', d3.forceManyBody().strength(-30))
+      .force('charge', d3.forceManyBody()
+        .strength(-100)
+        .distanceMax(200)
+      )
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(5));
+      .force('collision', d3.forceCollide().radius(8))
+      .force('x', d3.forceX(width / 2).strength(0.05))
+      .force('y', d3.forceY(height / 2).strength(0.05));
     
-    // Create a group for links and append line elements
-    const link = svg.append('g')
+    // Create links with gradient effect
+    const link = g.append('g')
       .selectAll('line')
       .data(links)
       .join('line')
-      .attr('stroke', '#999')
-      .attr('stroke-opacity', d => d.strength / 2)
-      .attr('stroke-width', d => d.strength * 2);
+      .attr('stroke', '#4b5563')
+      .attr('stroke-opacity', d => Math.min(0.2 + d.strength / 2, 0.8))
+      .attr('stroke-width', d => d.strength * 1.5);
     
-    // Create a group for nodes and append circle elements
-    const node = svg.append('g')
+    // Create nodes with gradient fills
+    const node = g.append('g')
       .selectAll('circle')
       .data(people)
       .join('circle')
-      .attr('r', 4)
+      .attr('r', 5)
       .attr('fill', d => getNodeColor(d.status))
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 1.5)
+      .attr('stroke', 'none')
       .call(drag(simulation) as any);
     
     // Add hover tooltip
@@ -78,10 +153,13 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ network, width, height }) =
         .attr('y2', d => (d.target as any).y);
       
       node
-        .attr('cx', d => Math.max(5, Math.min(width - 5, d.x as number)))
-        .attr('cy', d => Math.max(5, Math.min(height - 5, d.y as number)));
+        .attr('cx', d => Math.max(10, Math.min(width - 10, d.x as number)))
+        .attr('cy', d => Math.max(10, Math.min(height - 10, d.y as number)));
     });
 
+    // Heat up the simulation initially then cool it down
+    simulation.alpha(1).restart();
+    
     // Implement drag behavior
     function drag(simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>) {
       function dragstarted(event: any) {
@@ -114,7 +192,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ network, width, height }) =
   }, [network, width, height]);
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+    <div className="rounded-lg overflow-hidden bg-gray-800">
       <svg ref={svgRef} className="w-full h-full"></svg>
     </div>
   );
